@@ -60,41 +60,50 @@ class CRM_Communitysize_Logic {
    * Load temporary ids for specific group
    *
    * @param int $groupId Group Id
+   * @param int $limit Limit
    */
-  public static function loadTemporary($groupId) {
+  public static function loadTemporary($groupId, $limit) {
+    $limit = (int)$limit;
+    if (!$limit) {
+      $limit = 100;
+    }
     $query = "INSERT IGNORE INTO civicrm_communitysize_ids
-              SELECT c.id, 'is_opt_out'
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-              WHERE c.is_opt_out = 1
-              UNION
-              SELECT c.id, 'do_not_email'
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-              WHERE c.do_not_email = 1
-              UNION
-              SELECT c.id, 'is_deleted'
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-              WHERE c.is_deleted = 1
-              UNION
-              SELECT c.id, 'is_deceased'
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-              WHERE c.is_deceased = 1
-              UNION
-              SELECT c.id, CONCAT('on_hold:', e.on_hold)
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-                JOIN civicrm_email e ON c.id = e.contact_id AND e.on_hold > 0
-              UNION
-              SELECT c.id, 'no_email'
-              FROM civicrm_contact c
-                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-                LEFT JOIN civicrm_email e ON c.id = e.contact_id
-              WHERE e.id IS NULL";
+              SELECT id, group_concat(reason ORDER BY reason SEPARATOR ', ') as subject
+              FROM (SELECT c.id, 'is_opt_out' AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                WHERE c.is_opt_out = 1
+                UNION
+                SELECT c.id, 'do_not_email' AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                WHERE c.do_not_email = 1
+                UNION
+                SELECT c.id, 'is_deleted' AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                WHERE c.is_deleted = 1
+                UNION
+                SELECT c.id, 'is_deceased' AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                WHERE c.is_deceased = 1
+                UNION
+                SELECT c.id, CONCAT('on_hold:', e.on_hold) AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                  JOIN civicrm_email e ON c.id = e.contact_id AND e.on_hold > 0
+                UNION
+                SELECT c.id, 'no_email' AS reason
+                FROM civicrm_contact c
+                  JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                  LEFT JOIN civicrm_email e ON c.id = e.contact_id
+                WHERE e.id IS NULL) t
+              GROUP BY t.id
+              LIMIT %2";
     $params = array(
       1 => array($groupId, 'Integer'),
+      2 => array($limit, 'Integer'),
     );
     CRM_Core_DAO::executeQuery($query, $params);
   }
@@ -106,7 +115,7 @@ class CRM_Communitysize_Logic {
    * @return int
    */
   public static function countTemporaryContacts() {
-    $query = "SELECT count(DISTINCT id) FROM civicrm_communitysize_ids";
+    $query = "SELECT count(id) FROM civicrm_communitysize_ids";
     return (int)CRM_Core_DAO::singleValueQuery($query);
   }
 
@@ -140,9 +149,8 @@ class CRM_Communitysize_Logic {
    * @return array
    */
   public static function getDataForActivities() {
-    $query = "SELECT id, group_concat(reason ORDER BY reason SEPARATOR ', ') as subject
-              FROM civicrm_communitysize_ids
-              GROUP BY id";
+    $query = "SELECT id, reason as subject
+              FROM civicrm_communitysize_ids";
     $dao = CRM_Core_DAO::executeQuery($query);
     return $dao->fetchAll();
   }
