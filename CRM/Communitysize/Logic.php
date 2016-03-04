@@ -15,7 +15,7 @@ class CRM_Communitysize_Logic {
               FROM civicrm_contact c
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
                 JOIN civicrm_email e ON c.id = e.contact_id AND e.is_primary = 1 AND e.on_hold = 0
-              WHERE c.is_deleted = 0 AND c.is_opt_out = 0;";
+              WHERE c.is_deleted = 0 AND c.is_opt_out = 0 AND c.do_not_email = 0 AND c.is_deceased = 0;";
     $params = array(
       1 => array($groupId, 'Integer'),
     );
@@ -77,6 +77,11 @@ class CRM_Communitysize_Logic {
               FROM civicrm_contact c
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
               WHERE c.is_deleted = 1
+              UNION
+              SELECT c.id, 'is_deceased'
+              FROM civicrm_contact c
+                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+              WHERE c.is_deceased = 1
               UNION
               SELECT c.id, CONCAT('on_hold:', e.on_hold)
               FROM civicrm_contact c
