@@ -68,6 +68,11 @@ class CRM_Communitysize_Logic {
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
               WHERE c.is_opt_out = 1
               UNION
+              SELECT c.id, 'do_not_email'
+              FROM civicrm_contact c
+                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+              WHERE c.do_not_email = 1
+              UNION
               SELECT c.id, 'is_deleted'
               FROM civicrm_contact c
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
