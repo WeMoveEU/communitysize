@@ -76,11 +76,16 @@ class CRM_Communitysize_Logic {
               SELECT c.id, CONCAT('on_hold:', e.on_hold)
               FROM civicrm_contact c
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
-                JOIN civicrm_email e ON c.id = e.contact_id AND e.on_hold > 0";
+                JOIN civicrm_email e ON c.id = e.contact_id AND e.on_hold > 0
+              UNION
+              SELECT c.id, 'no_email'
+              FROM civicrm_contact c
+                JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
+                LEFT JOIN civicrm_email e ON c.id = e.contact_id
+              WHERE e.id IS NULL";
     $params = array(
       1 => array($groupId, 'Integer'),
     );
-    CRM_Core_Error::debug_var('$query loadTemporar', $query, false, true);
     CRM_Core_DAO::executeQuery($query, $params);
   }
 
