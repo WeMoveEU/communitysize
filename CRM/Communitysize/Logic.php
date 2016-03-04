@@ -149,7 +149,7 @@ class CRM_Communitysize_Logic {
    * @return array
    */
   public static function getDataForActivities() {
-    $query = "SELECT id, reason as subject
+    $query = "SELECT id, subject
               FROM civicrm_communitysize_ids";
     $dao = CRM_Core_DAO::executeQuery($query);
     return $dao->fetchAll();
