@@ -11,7 +11,7 @@ class CRM_Communitysize_Logic {
    * @return int
    */
   public static function getCount($groupId) {
-    $query = "SELECT count(c.id)
+    $query = "SELECT count(DISTINCT c.id)
               FROM civicrm_contact c
                 JOIN civicrm_group_contact gc ON c.id = gc.contact_id AND gc.group_id = %1 AND gc.status = 'Added'
                 JOIN civicrm_email e ON c.id = e.contact_id AND e.is_primary = 1 AND e.on_hold = 0
