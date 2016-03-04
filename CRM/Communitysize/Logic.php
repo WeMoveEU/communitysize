@@ -6,7 +6,7 @@ class CRM_Communitysize_Logic {
   /**
    * Get count of membership in group
    *
-   * @param $groupId
+   * @param int $groupId Group Id
    *
    * @return int
    */
@@ -26,7 +26,7 @@ class CRM_Communitysize_Logic {
   /**
    * Clean up membership in group
    *
-   * @param $groupId
+   * @param int $groupId Group Id
    */
   public static function cleanUp($groupId) {
     $query = "UPDATE civicrm_group_contact gc
@@ -59,7 +59,7 @@ class CRM_Communitysize_Logic {
   /**
    * Load temporary ids for specific group
    *
-   * @param $groupId
+   * @param int $groupId Group Id
    */
   public static function loadTemporary($groupId) {
     $query = "INSERT IGNORE INTO civicrm_communitysize_ids
@@ -108,5 +108,85 @@ class CRM_Communitysize_Logic {
   public static function countTemporaryContacts() {
     $query = "SELECT count(DISTINCT id) FROM civicrm_communitysize_ids";
     return (int)CRM_Core_DAO::singleValueQuery($query);
+  }
+
+
+  /**
+   * Get activity type id. If type isn't exist, create it.
+   *
+   * @param string $activityName
+   *
+   * @return int
+   * @throws \CiviCRM_API3_Exception
+   */
+  public static function getActivityTypeId($activityName) {
+    $params = array(
+      'sequential' => 1,
+      'option_group_id' => 'activity_type',
+      'name' => $activityName,
+    );
+    $result = civicrm_api3('OptionValue', 'get', $params);
+    if ($result['count'] == 0) {
+      $params['is_active'] = 1;
+      $result = civicrm_api3('OptionValue', 'create', $params);
+    }
+    return (int)$result['values'][0]['value'];
+  }
+
+
+  /**
+   * Get data (contact id and subject) for creating activity
+   *
+   * @return array
+   */
+  public static function getDataForActivities() {
+    $query = "SELECT id, group_concat(reason ORDER BY reason SEPARATOR ', ') as subject
+              FROM civicrm_communitysize_ids
+              GROUP BY id";
+    $dao = CRM_Core_DAO::executeQuery($query);
+    return $dao->fetchAll();
+  }
+
+
+  /**
+   * Create activity for contact.
+   *
+   * @param $contactId
+   * @param $typeId
+   * @param $status
+   * @param $subject
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public static function createActivity($contactId, $typeId, $status, $subject) {
+    $params = array(
+      'sequential' => 1,
+      'activity_type_id' => $typeId,
+      'activity_date_time' => date('Y-m-d H:i:s'),
+      'subject' => $subject,
+      'status_id' => $status,
+      'source_contact_id' => $contactId,
+      'api.ActivityContact.create' => array(
+        'sequential' => 1,
+        'activity_id' => '$value.id',
+        'contact_id' => $contactId,
+        'record_type_id' => 1,
+      ),
+    );
+    civicrm_api3('Activity', 'create', $params);
+  }
+
+
+  /**
+   * Create activities in batch
+   *
+   * @param array $data  Table of contact ids and subjects
+   * @param int $typeId  Type Id of activity
+   * @param string $status  Status of activity
+   */
+  public static function createActivitiesInBatch($data, $typeId, $status = 'Completed') {
+    foreach((array)$data as $contact) {
+      self::createActivity($contact['id'], $typeId, $status, $contact['subject']);
+    }
   }
 }

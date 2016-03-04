@@ -26,6 +26,10 @@ function civicrm_api3_communitysize_cleanup($params) {
     CRM_Communitysize_Logic::truncateTemporary();
     CRM_Communitysize_Logic::loadTemporary($groupId);
     CRM_Communitysize_Logic::cleanUp($groupId);
+    $activityTypeName = CRM_Core_BAO_Setting::getItem('Community Size', 'activity_type_name');
+    $activityTypeId = CRM_Communitysize_Logic::getActivityTypeId($activityTypeName);
+    $data = CRM_Communitysize_Logic::getDataForActivities();
+    CRM_Communitysize_Logic::createActivitiesInBatch($data, $activityTypeId, 'Completed');
     $results = CRM_Communitysize_Logic::countTemporaryContacts();
     CRM_Communitysize_Logic::truncateTemporary();
 
