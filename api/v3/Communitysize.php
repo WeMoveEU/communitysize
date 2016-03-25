@@ -58,12 +58,12 @@ function civicrm_api3_communitysize_join($params) {
   $groupId = $params['group_id'];
   $activityTypeId = $params['activity_type_id'];
   $limit = $params['limit'];
-  $query = "CALL updateJoinActivities(%1, %2, %3);";
+  $query = "SELECT updateJoinActivities(%1, %2, %3) AS results;";
   $query_params = array(
     1 => array($groupId, 'Integer'),
     2 => array($activityTypeId, 'Integer'),
     3 => array($limit, 'Integer'),
   );
-  CRM_Core_DAO::executeQuery($query, $query_params);
-  return civicrm_api3_create_success(1, $params);
+  $results = (int)CRM_Core_DAO::singleValueQuery($query, $query_params);
+  return civicrm_api3_create_success($results, $params);
 }

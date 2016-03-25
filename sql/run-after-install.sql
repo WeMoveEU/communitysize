@@ -1,10 +1,10 @@
 -- run this script after installation
 START TRANSACTION ;
 DELIMITER #
-DROP PROCEDURE IF EXISTS updateJoinActivities#
-CREATE PROCEDURE updateJoinActivities(IN groupId INT, activityType INT, nlimit INT)
+DROP FUNCTION IF EXISTS updateJoinActivities#
+CREATE FUNCTION updateJoinActivities(groupId INT, activityType INT, nlimit INT) RETURNS INT
   BEGIN
-    DECLARE cid INT;
+    DECLARE cid, results INT;
     DECLARE done INT DEFAULT FALSE;
     DECLARE cur1 CURSOR FOR
       SELECT DISTINCT sh.contact_id
@@ -18,6 +18,7 @@ CREATE PROCEDURE updateJoinActivities(IN groupId INT, activityType INT, nlimit I
       ORDER BY sh.contact_id
       LIMIT nlimit;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    SET results = 0;
 
     OPEN cur1;
     loop_contacts: LOOP
@@ -57,8 +58,6 @@ CREATE PROCEDURE updateJoinActivities(IN groupId INT, activityType INT, nlimit I
           ORDER BY a.activity_date_time ASC
           LIMIT 1;
 
-          -- tutaj jeszcze próba znalezienia z source?
-
           IF campaignId > 0 THEN
             INSERT INTO civicrm_activity (activity_type_id, subject, activity_date_time, status_id, campaign_id)
             VALUES (activityType, 'updateBySQL', aDate, 2, campaignId);
@@ -69,10 +68,11 @@ CREATE PROCEDURE updateJoinActivities(IN groupId INT, activityType INT, nlimit I
           END IF;
           SET naid = last_insert_id();
           INSERT INTO civicrm_activity_contact (activity_id, contact_id, record_type_id) VALUES (naid, cid, 2);
+          SET results = results + 1;
         END LOOP loop_history;
       END;
     END LOOP loop_contacts;
-
+    RETURN results;
   END#
 
 DELIMITER ;
