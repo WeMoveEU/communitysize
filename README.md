@@ -14,11 +14,15 @@ CiviCRM Extension provides API for getting size of community.
 ## Settings
 
 * `member_group_id` Membership of this group means that contact is in our community
-* `activity_type_name` Activity type used for marking contacts who are removed from group, by default *Optout*
+* `activity_type_name` Activity type used for marking contacts who are removed from group, by default *Leave*
 
 ## API actions
 
 * `getcount`
-* `cleanup` cleaning up contacts from group, parameters
+* `cleanup` cleaning up contacts from group, parameters:
     * `group_id` default from settings
+    * `limit` number of contacts per one call
+* `join` set up Join activity based on history of group (only first at Added date)
+    * `group_id` 
+    * `activity_type_id` id of Join type activity
     * `limit` number of contacts per one call

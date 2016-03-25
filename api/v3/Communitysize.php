@@ -43,3 +43,27 @@ function civicrm_api3_communitysize_cleanup($params) {
     throw $ex;
   }
 }
+
+
+function _civicrm_api3_communitysize_join_spec(&$params) {
+  $params['group_id']['api.required'] = 1;
+  $params['group_id']['api.default'] = CRM_Core_BAO_Setting::getItem('Community Size', 'member_group_id');
+  $params['activity_type_id']['api.required'] = 1;
+  $params['limit']['api.required'] = 1;
+  $params['limit']['api.default'] = 1000;
+}
+
+
+function civicrm_api3_communitysize_join($params) {
+  $groupId = $params['group_id'];
+  $activityTypeId = $params['activity_type_id'];
+  $limit = $params['limit'];
+  $query = "CALL updateJoinActivities(%1, %2, %3);";
+  $query_params = array(
+    1 => array($groupId, 'Integer'),
+    2 => array($activityTypeId, 'Integer'),
+    3 => array($limit, 'Integer'),
+  );
+  CRM_Core_DAO::executeQuery($query, $query_params);
+  return civicrm_api3_create_success(1, $params);
+}
