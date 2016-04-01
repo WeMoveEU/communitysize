@@ -30,7 +30,7 @@ class CRM_Communitysize_Logic {
    */
   public static function cleanUp($groupId) {
     $query = "UPDATE civicrm_group_contact gc
-              JOIN civicrm_communitysize_ids i ON gc.contact_id = i.id AND gc.group_id = %1
+              JOIN civicrm_communitysize_cleanup i ON gc.contact_id = i.id AND gc.group_id = %1
               SET gc.status = 'Removed'";
     $params = array(
       1 => array($groupId, 'Integer'),
@@ -39,7 +39,7 @@ class CRM_Communitysize_Logic {
 
     $query = "INSERT INTO civicrm_subscription_history (contact_id, group_id, date, method, status)
               SELECT DISTINCTROW id, %1, NOW(), 'Admin', 'Removed'
-              FROM civicrm_communitysize_ids";
+              FROM civicrm_communitysize_cleanup";
     $params = array(
       1 => array($groupId, 'Integer'),
     );
@@ -51,7 +51,7 @@ class CRM_Communitysize_Logic {
    * Truncate temporary table
    */
   public static function truncateTemporary() {
-    $query = "TRUNCATE civicrm_communitysize_ids";
+    $query = "TRUNCATE civicrm_communitysize_cleanup";
     CRM_Core_DAO::executeQuery($query);
   }
 
@@ -67,7 +67,7 @@ class CRM_Communitysize_Logic {
     if (!$limit) {
       $limit = 100;
     }
-    $query = "INSERT IGNORE INTO civicrm_communitysize_ids
+    $query = "INSERT IGNORE INTO civicrm_communitysize_cleanup
               SELECT id, group_concat(reason ORDER BY reason SEPARATOR ', ') as subject
               FROM (SELECT c.id, 'is_opt_out' AS reason
                 FROM civicrm_contact c
@@ -115,7 +115,7 @@ class CRM_Communitysize_Logic {
    * @return int
    */
   public static function countTemporaryContacts() {
-    $query = "SELECT count(id) FROM civicrm_communitysize_ids";
+    $query = "SELECT count(id) FROM civicrm_communitysize_cleanup";
     return (int)CRM_Core_DAO::singleValueQuery($query);
   }
 
@@ -150,7 +150,7 @@ class CRM_Communitysize_Logic {
    */
   public static function getDataForActivities() {
     $query = "SELECT id, subject
-              FROM civicrm_communitysize_ids";
+              FROM civicrm_communitysize_cleanup";
     $dao = CRM_Core_DAO::executeQuery($query);
     return $dao->fetchAll();
   }
