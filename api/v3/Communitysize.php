@@ -22,6 +22,7 @@ function _civicrm_api3_communitysize_cleanup_spec(&$params) {
 
 
 function civicrm_api3_communitysize_cleanup($params) {
+  $start = microtime(true);
   $tx = new CRM_Core_Transaction();
   try {
     $groupId = $params['group_id'];
@@ -33,10 +34,13 @@ function civicrm_api3_communitysize_cleanup($params) {
     $activityTypeId = CRM_Communitysize_Logic::getActivityTypeId($activityTypeName);
     $data = CRM_Communitysize_Logic::getDataForActivities();
     CRM_Communitysize_Logic::createActivitiesInBatch($data, $activityTypeId, 'Completed');
-    $results = CRM_Communitysize_Logic::countTemporaryContacts();
+    $count = CRM_Communitysize_Logic::countTemporaryContacts();
     CRM_Communitysize_Logic::truncateTemporary();
-
     $tx->commit();
+    $results = array(
+      'count' => $count,
+      'time' => microtime(true) - $start,
+    );
     return civicrm_api3_create_success($results, $params);
   } catch (Exception $ex) {
     $tx->rollback()->commit();
@@ -55,6 +59,7 @@ function _civicrm_api3_communitysize_join_spec(&$params) {
 
 
 function civicrm_api3_communitysize_join($params) {
+  $start = microtime(true);
   $groupId = $params['group_id'];
   $activityTypeId = $params['activity_type_id'];
   $limit = $params['limit'];
@@ -64,6 +69,10 @@ function civicrm_api3_communitysize_join($params) {
     2 => array($activityTypeId, 'Integer'),
     3 => array($limit, 'Integer'),
   );
-  $results = (int)CRM_Core_DAO::singleValueQuery($query, $query_params);
+  $count = (int)CRM_Core_DAO::singleValueQuery($query, $query_params);
+  $results = array(
+    'count' => $count,
+    'time' => microtime(true) - $start,
+  );
   return civicrm_api3_create_success($results, $params);
 }
