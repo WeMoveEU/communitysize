@@ -174,12 +174,6 @@ class CRM_Communitysize_Logic {
       'subject' => $subject,
       'status_id' => $status,
       'source_contact_id' => $contactId,
-      'api.ActivityContact.create' => array(
-        'sequential' => 1,
-        'activity_id' => '$value.id',
-        'contact_id' => $contactId,
-        'record_type_id' => 1,
-      ),
     );
     civicrm_api3('Activity', 'create', $params);
   }
