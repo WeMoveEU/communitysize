@@ -9,16 +9,20 @@ CREATE FUNCTION updateJoinActivities(groupId INT, activityType INT, nlimit INT) 
     DECLARE cur1 CURSOR FOR
       SELECT DISTINCT sh.contact_id
       FROM civicrm_subscription_history sh
-        LEFT JOIN (SELECT sh.contact_id
-        FROM civicrm_subscription_history sh
-          JOIN civicrm_activity_contact ac ON sh.contact_id = ac.contact_id AND ac.record_type_id = 2
-          JOIN civicrm_activity a ON ac.activity_id = a.id AND a.activity_type_id = activityType AND sh.date = a.activity_date_time
-        WHERE sh.group_id = groupId AND sh.status IN ('Added')) t ON sh.contact_id = t.contact_id
-      WHERE group_id = groupId AND sh.status IN ('Added') AND t.contact_id IS NULL
+        LEFT JOIN civicrm_communitysize_join t ON sh.contact_id = t.id
+      WHERE group_id = groupId AND sh.status IN ('Added') AND t.id IS NULL
       ORDER BY sh.contact_id
       LIMIT nlimit;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     SET results = 0;
+
+    DELETE FROM civicrm_communitysize_join;
+    INSERT INTO civicrm_communitysize_join (id)
+      SELECT DISTINCT sh.contact_id
+      FROM civicrm_subscription_history sh
+        JOIN civicrm_activity_contact ac ON sh.contact_id = ac.contact_id AND ac.record_type_id = 2
+        JOIN civicrm_activity a ON ac.activity_id = a.id AND a.activity_type_id = activityType AND sh.date = a.activity_date_time
+      WHERE sh.group_id = groupId AND sh.status IN ('Added');
 
     OPEN cur1;
     loop_contacts: LOOP
@@ -72,6 +76,7 @@ CREATE FUNCTION updateJoinActivities(groupId INT, activityType INT, nlimit INT) 
         END LOOP loop_history;
       END;
     END LOOP loop_contacts;
+    DELETE FROM civicrm_communitysize_join;
     RETURN results;
   END#
 
