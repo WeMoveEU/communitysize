@@ -21,7 +21,7 @@ CREATE FUNCTION updateJoinActivities(groupId INT, activityType INT, nlimit INT) 
       SELECT DISTINCT sh.contact_id
       FROM civicrm_subscription_history sh
         JOIN civicrm_activity_contact ac ON sh.contact_id = ac.contact_id AND ac.record_type_id = 2
-        JOIN civicrm_activity a ON ac.activity_id = a.id AND a.activity_type_id = activityType AND DATE_FORMAT(sh.date, '%Y%m%d%H%i') = DATE_FORMAT(a.activity_date_time, '%Y%m%d%H%i')
+        JOIN civicrm_activity a ON ac.activity_id = a.id AND a.activity_type_id = activityType AND ABS(TIME_TO_SEC(TIMEDIFF(sh.date, a.activity_date_time))) <= 60
       WHERE sh.group_id = groupId AND sh.status IN ('Added');
 
     OPEN cur1;
