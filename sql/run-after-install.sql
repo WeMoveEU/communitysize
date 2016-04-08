@@ -56,11 +56,10 @@ CREATE FUNCTION updateJoinActivities(groupId INT, activityType INT, nlimit INT) 
             LEAVE loop_history;
           END IF;
 
-          SELECT a.campaign_id INTO campaignId
-          FROM civicrm_activity a JOIN civicrm_activity_contact ac ON a.id = ac.activity_id
-          WHERE ac.contact_id = cid AND a.activity_type_id = 32 and a.activity_date_time <= aDate
-          ORDER BY a.activity_date_time ASC
-          LIMIT 1;
+          SELECT ca.id INTO campaignId
+          FROM civicrm_contact c
+            JOIN civicrm_campaign ca ON concat('speakout petition ', ca.external_identifier) = c.source
+          WHERE c.id = cid AND c.source LIKE 'speakout petition %';
 
           IF campaignId > 0 THEN
             INSERT INTO civicrm_activity (activity_type_id, subject, activity_date_time, status_id, campaign_id)
